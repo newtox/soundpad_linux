@@ -69,6 +69,9 @@ def run_gui():
 
 
 def main():
+    if not sys.platform.startswith("linux"):
+        print(tr("{app} only runs on Linux.", app=APP_NAME), file=sys.stderr)
+        return 1
     set_language(load_settings().get("language"))
     args, _qt_args = build_parser().parse_known_args()
     cmd = command_from_args(args)

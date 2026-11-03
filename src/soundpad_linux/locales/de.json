@@ -117,6 +117,7 @@
   "play the sound with this number": "Sound mit dieser Nummer abspielen",
   "stop all sounds": "alle Sounds stoppen",
   "{app} is not running.": "{app} läuft nicht.",
+  "{app} only runs on Linux.": "{app} läuft nur unter Linux.",
   "{fixed} files found, {missing} still missing.": "{fixed} Dateien zugeordnet, {missing} fehlen noch.",
   "{module} could not be loaded": "{module} konnte nicht geladen werden",
   "{n} files were not found (marked red). Use »Find missing« to search more folders.": "{n} Dateien wurden nicht gefunden (rot markiert). Über »Fehlende suchen« kannst du weitere Ordner durchsuchen.",

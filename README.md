@@ -2,6 +2,8 @@
 
 A soundboard for Linux and an alternative to Soundpad. It plays sounds through a virtual microphone that also carries your real microphone (e.g. EasyEffects), so others in Discord, TeamSpeak or your game hear both. Existing Soundpad sound lists (`.spl`) can be imported directly.
 
+> **Linux only.** The virtual microphone is built on PipeWire/PulseAudio. On Windows, use the original [Soundpad](https://store.steampowered.com/app/629520/Soundpad/).
+>
 > Unofficial project, not affiliated with Soundpad or Leppsoft.
 
 ![Screenshot](docs/screenshot.png)
@@ -22,13 +24,24 @@ A soundboard for Linux and an alternative to Soundpad. It plays sounds through a
 
 ## Requirements
 
-- Linux with PipeWire (incl. `pipewire-pulse`) or PulseAudio
+- Linux (Windows and macOS are not supported) with PipeWire (incl. `pipewire-pulse`) or PulseAudio
 - Python ≥ 3.10 with PySide6
 - `ffmpeg`/`ffprobe` and `pactl`/`pacat` (package `pulseaudio-utils`)
 
 ## Installation
 
-### Install script (Fedora/Nobara)
+### Download (Fedora/Nobara)
+
+1. Download `soundpad_linux-<version>.tar.gz` from the [latest release](https://github.com/newtox/soundpad_linux/releases/latest)
+2. Extract it and run the installer:
+
+```bash
+tar xzf soundpad_linux-*.tar.gz
+cd soundpad_linux-*/
+./install.sh
+```
+
+### From the repository
 
 ```bash
 git clone https://github.com/newtox/soundpad_linux.git
@@ -38,7 +51,7 @@ cd soundpad_linux
 
 The script installs missing packages with `dnf`, copies the program to `~/.local/share/soundpad_linux`, creates the `soundpad_linux` command in `~/.local/bin` and adds an entry to your application menu.
 
-Update: `git pull && ./install.sh` · Uninstall: `./install.sh --uninstall`
+To update, run `./install.sh` from a newer release (or after `git pull`). Uninstall with `./install.sh --uninstall`.
 
 On other distributions, install the packages listed under [Requirements](#requirements) first, then run the script.
 
@@ -47,6 +60,8 @@ On other distributions, install the packages listed under [Requirements](#requir
 ```bash
 pipx install git+https://github.com/newtox/soundpad_linux.git
 ```
+
+Or install the `.whl` file from a release: `pipx install soundpad_linux-<version>-py3-none-any.whl`
 
 `ffmpeg` and `pulseaudio-utils` still need to be installed through your package manager.
 
@@ -118,6 +133,18 @@ pip install -e ".[dev]"
 ruff check .
 pytest
 ```
+
+### Releasing a new version
+
+1. Bump `__version__` in `src/soundpad_linux/__init__.py` and commit
+2. Tag and push:
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+GitHub Actions runs the tests, builds the release archive and the wheel, and publishes the release with generated notes.
 
 ### Project structure
 

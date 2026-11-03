@@ -6,7 +6,7 @@ from PySide6.QtNetwork import QLocalServer, QLocalSocket
 
 from .constants import APP_ID
 
-SERVER_NAME = f"{APP_ID}-{os.getuid()}"
+SERVER_NAME = f"{APP_ID}-{getattr(os, 'getuid', lambda: 0)()}"
 
 
 def send_command(cmd, timeout_ms=500):

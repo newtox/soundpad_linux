@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Check that the tag matches the version
+        run: |
+          VERSION=$(python -c "import re; print(re.search(r'__version__ = \"(.+)\"', open('src/soundpad_linux/__init__.py').read()).group(1))")
+          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match __version__ $VERSION"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Test
+        run: |
+          pip install -e ".[dev]" build
+          ruff check .
+          pytest
+
+      - name: Build packages
+        run: |
+          python -m build --wheel
+          NAME="soundpad_linux-$VERSION"
+          git archive --format=tar.gz --prefix="$NAME/" -o "dist/$NAME.tar.gz" HEAD
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "Soundpad_Linux $VERSION" \
+            --generate-notes
