@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "soundpad_linux"
+dynamic = ["version"]
+description = "Soundboard für Linux mit virtuellem Mikrofon und Import von Soundpad-Listen (.spl)"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Justin", email = "justin.lys26@gmail.com" }]
+requires-python = ">=3.10"
+dependencies = ["PySide6-Essentials>=6.5"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+    "Environment :: X11 Applications :: Qt",
+    "Topic :: Multimedia :: Sound/Audio",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.urls]
+Homepage = "https://github.com/newtox/soundpad_linux"
+Issues = "https://github.com/newtox/soundpad_linux/issues"
+
+[project.gui-scripts]
+soundpad_linux = "soundpad_linux.app:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "soundpad_linux.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+soundpad_linux = ["locales/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["B008"]

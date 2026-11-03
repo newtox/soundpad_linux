@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Soundlist>
+  <Sound url="C:\Users\Justin\Music\Soundpad\Memes\Airhorn.mp3" artist="" title="Airhorn" duration="0:02" addedOn="2021-03-01" playCount="12"/>
+  <Sound url="C:\Users\Justin\Music\Soundpad\bruh.wav" title="" duration="0:01"/>
+  <Sound url="D:\Sounds\Fehlt &amp; weg.mp3" title="Fehlt &amp; weg" duration="1:05"/>
+  <Categories>
+    <Category name="All sounds" type="1"><Sound id="1"/><Sound id="2"/><Sound id="3"/></Category>
+    <Category name="Memes"><Sound id="1"/><Sound id="2"/></Category>
+  </Categories>
+</Soundlist>
