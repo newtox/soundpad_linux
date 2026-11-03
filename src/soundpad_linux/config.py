@@ -22,6 +22,7 @@ DEFAULT_SETTINGS = {
     "tray": False,
     "language": "en",
     "theme": "dark",
+    "routing": "virtual",
     "last_dir": str(Path.home()),
 }
 

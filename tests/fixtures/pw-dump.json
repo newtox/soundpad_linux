@@ -1,0 +1,30 @@
+[
+  {"id": 40, "type": "PipeWire:Interface:Node", "info": {"props": {"node.name": "easyeffects_source", "media.class": "Audio/Source/Virtual"}}},
+  {"id": 41, "type": "PipeWire:Interface:Port", "info": {"direction": "output", "props": {"node.id": 40, "audio.channel": "FL", "port.name": "capture_FL"}}},
+  {"id": 42, "type": "PipeWire:Interface:Port", "info": {"direction": "output", "props": {"node.id": 40, "audio.channel": "FR", "port.name": "capture_FR"}}},
+
+  {"id": 50, "type": "PipeWire:Interface:Node", "info": {"props": {"node.name": "WEBRTC VoiceEngine", "media.class": "Stream/Input/Audio", "application.name": "Discord"}}},
+  {"id": 51, "type": "PipeWire:Interface:Port", "info": {"direction": "input", "props": {"node.id": 50, "audio.channel": "MONO", "port.name": "input_MONO"}}},
+  {"id": 52, "type": "PipeWire:Interface:Link", "info": {"output-node-id": 40, "output-port-id": 41, "input-node-id": 50, "input-port-id": 51}},
+  {"id": 53, "type": "PipeWire:Interface:Link", "info": {"output-node-id": 40, "output-port-id": 42, "input-node-id": 50, "input-port-id": 51}},
+
+  {"id": 60, "type": "PipeWire:Interface:Node", "info": {"props": {"node.name": "obs", "media.class": "Stream/Input/Audio"}}},
+  {"id": 61, "type": "PipeWire:Interface:Port", "info": {"direction": "input", "props": {"node.id": 60, "audio.channel": "FL"}}},
+  {"id": 62, "type": "PipeWire:Interface:Port", "info": {"direction": "input", "props": {"node.id": 60, "audio.channel": "FR"}}},
+  {"id": 63, "type": "PipeWire:Interface:Link", "info": {"output-node-id": 40, "output-port-id": 41, "input-node-id": 60, "input-port-id": 61}},
+  {"id": 64, "type": "PipeWire:Interface:Link", "info": {"output-node-id": 40, "output-port-id": 42, "input-node-id": 60, "input-port-id": 62}},
+
+  {"id": 70, "type": "PipeWire:Interface:Node", "info": {"props": {"node.name": "Peak detect", "media.class": "Stream/Input/Audio", "stream.monitor": true}}},
+  {"id": 71, "type": "PipeWire:Interface:Port", "info": {"direction": "input", "props": {"node.id": 70, "audio.channel": "MONO"}}},
+  {"id": 72, "type": "PipeWire:Interface:Link", "info": {"output-node-id": 40, "output-port-id": 41, "input-node-id": 70, "input-port-id": 71}},
+
+  {"id": 80, "type": "PipeWire:Interface:Node", "info": {"props": {"node.name": "alsa_input.rode", "media.class": "Audio/Source"}}},
+  {"id": 81, "type": "PipeWire:Interface:Port", "info": {"direction": "output", "props": {"node.id": 80, "audio.channel": "MONO"}}},
+  {"id": 90, "type": "PipeWire:Interface:Node", "info": {"props": {"node.name": "easyeffects_rec", "media.class": "Stream/Input/Audio"}}},
+  {"id": 91, "type": "PipeWire:Interface:Port", "info": {"direction": "input", "props": {"node.id": 90, "audio.channel": "MONO"}}},
+  {"id": 92, "type": "PipeWire:Interface:Link", "info": {"output-node-id": 80, "output-port-id": 81, "input-node-id": 90, "input-port-id": 91}},
+
+  {"id": 100, "type": "PipeWire:Interface:Node", "info": {"props": {"node.name": "soundpad_linux_inject_3", "media.class": "Stream/Output/Audio"}}},
+  {"id": 101, "type": "PipeWire:Interface:Port", "info": {"direction": "output", "props": {"node.id": 100, "audio.channel": "FL"}}},
+  {"id": 102, "type": "PipeWire:Interface:Port", "info": {"direction": "output", "props": {"node.id": 100, "audio.channel": "FR"}}}
+]

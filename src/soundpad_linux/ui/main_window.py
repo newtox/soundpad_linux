@@ -33,7 +33,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .. import __version__
+from .. import __version__, pwgraph
 from ..audio import AudioRouter
 from ..categories import Categories
 from ..config import load_config, save_config
@@ -44,6 +44,8 @@ from ..constants import (
     DEFAULT_SINK,
     EASYEFFECTS_SOURCE,
     MIX_SINK,
+    ROUTING_INJECT,
+    ROUTING_VIRTUAL,
     VIRTUAL_MIC_LABEL,
 )
 from ..i18n import available_languages, tr
@@ -115,6 +117,7 @@ class MainWindow(QMainWindow):
         self.server = CommandServer(self)
         self.server.received.connect(self.handle_command)
         self.player.changed.connect(self._on_player_changed)
+        self.player.notice.connect(lambda text: self.statusBar().showMessage("⚠  " + text, 6000))
         self.prober.probed.connect(self._on_probed)
 
         self._init_audio()
@@ -202,7 +205,7 @@ class MainWindow(QMainWindow):
 
         self.audio_status = QLabel()
         self.audio_status.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        self.statusBar().addPermanentWidget(self.audio_status, 1)
+        self.statusBar().addPermanentWidget(self.audio_status)
 
     def _build_library(self):
         splitter = QSplitter(Qt.Horizontal)
@@ -288,36 +291,49 @@ class MainWindow(QMainWindow):
         g = QGridLayout(box)
         g.setHorizontalSpacing(12)
 
-        g.addWidget(QLabel("🎤  " + tr("Microphone (mixed in):")), 0, 0)
+        g.addWidget(QLabel("🔀  " + tr("Mode:")), 0, 0)
+        self.mode_combo = QComboBox()
+        self.mode_combo.addItem(tr("Virtual microphone »{device}«", device=VIRTUAL_MIC_LABEL), ROUTING_VIRTUAL)
+        self.mode_combo.addItem(tr("Inject into my microphone (experimental)"), ROUTING_INJECT)
+        self.mode_combo.setCurrentIndex(max(self.mode_combo.findData(self.settings["routing"]), 0))
+        self.mode_combo.setToolTip(tr(
+            "Virtual microphone: creates a new input device that you select in Discord or your game.\n"
+            "Inject: no new device – sounds are sent directly to every app that records from your microphone."
+        ))
+        self.mode_combo.activated.connect(self._on_mode_selected)
+        g.addWidget(self.mode_combo, 0, 1)
+
+        self.mic_label = QLabel()
+        g.addWidget(self.mic_label, 1, 0)
         self.mic_combo = QComboBox()
         self.mic_combo.setMinimumWidth(300)
         self.mic_combo.activated.connect(self._on_mic_selected)
-        g.addWidget(self.mic_combo, 0, 1)
+        g.addWidget(self.mic_combo, 1, 1)
         refresh = QPushButton("🔄  " + tr("Reconnect"))
         refresh.setToolTip(tr("Refresh the device list and reconnect the microphone (e.g. after starting EasyEffects)"))
         refresh.clicked.connect(self._reconnect_audio)
-        g.addWidget(refresh, 0, 2)
+        g.addWidget(refresh, 1, 2)
 
         self.monitor_check = QCheckBox("🎧  " + tr("Hear sounds myself on:"))
         self.monitor_check.setChecked(bool(self.settings["monitor_enabled"]))
         self.monitor_check.toggled.connect(self._on_monitor_toggled)
-        g.addWidget(self.monitor_check, 1, 0)
+        g.addWidget(self.monitor_check, 2, 0)
         self.sink_combo = QComboBox()
         self.sink_combo.activated.connect(self._on_sink_selected)
-        g.addWidget(self.sink_combo, 1, 1)
+        g.addWidget(self.sink_combo, 2, 1)
         self.overlap_check = QCheckBox(tr("Play multiple sounds at once"))
         self.overlap_check.setChecked(bool(self.settings["overlap"]))
         self.overlap_check.toggled.connect(lambda v: self._set("overlap", v))
-        g.addWidget(self.overlap_check, 1, 2)
+        g.addWidget(self.overlap_check, 2, 2)
 
         self.vol_others = VolumeSlider(self.settings["vol_others"], lambda v: self._set("vol_others", v))
         self.vol_self = VolumeSlider(self.settings["vol_self"], lambda v: self._set("vol_self", v))
-        g.addWidget(QLabel("📢  " + tr("Volume for others:")), 2, 0)
-        g.addWidget(self.vol_others, 2, 1)
-        g.addWidget(self.vol_others.label, 2, 2)
-        g.addWidget(QLabel("🔈  " + tr("Volume for me:")), 3, 0)
-        g.addWidget(self.vol_self, 3, 1)
-        g.addWidget(self.vol_self.label, 3, 2)
+        g.addWidget(QLabel("📢  " + tr("Volume for others:")), 3, 0)
+        g.addWidget(self.vol_others, 3, 1)
+        g.addWidget(self.vol_others.label, 3, 2)
+        g.addWidget(QLabel("🔈  " + tr("Volume for me:")), 4, 0)
+        g.addWidget(self.vol_self, 4, 1)
+        g.addWidget(self.vol_self.label, 4, 2)
         g.setColumnStretch(1, 1)
         return box
 
@@ -402,16 +418,32 @@ class MainWindow(QMainWindow):
                 tr("The following programs are missing: {tools}", tools=", ".join(missing))
                 + "\n\n" + tr("Install with:") + "\n  sudo dnf install ffmpeg pulseaudio-utils",
             )
-        self.router.setup()
         self._fill_devices()
-        mic = self.settings["mic"]
-        if mic is None:
+        if self.settings["mic"] is None:
             mic = self._auto_mic()
             self.settings["mic"] = mic
             self._schedule_save()
             self.mic_combo.setCurrentIndex(max(self.mic_combo.findData(mic), 0))
-        self.router.set_mic(mic)
+        self._apply_routing()
+
+    def _injecting(self):
+        return self.settings["routing"] == ROUTING_INJECT
+
+    def _apply_routing(self):
+        self.router.error = ""
+        if self._injecting():
+            self.router.teardown()
+        else:
+            if not self.router.ready:
+                self.router.setup()
+            self.router.set_mic(self.settings["mic"])
+        self.mic_label.setText("🎤  " + (tr("Microphone (inject into):") if self._injecting()
+                                        else tr("Microphone (mixed in):")))
         self._update_audio_status()
+
+    def _on_mode_selected(self, _index):
+        self._set("routing", self.mode_combo.currentData() or ROUTING_VIRTUAL)
+        self._apply_routing()
 
     def _auto_mic(self):
         names = [self.mic_combo.itemData(i) for i in range(self.mic_combo.count())]
@@ -445,14 +477,31 @@ class MainWindow(QMainWindow):
         self.sink_combo.setEnabled(self.monitor_check.isChecked())
 
     def _reconnect_audio(self):
-        self.router.error = ""
-        if not self.router.ready:
-            self.router.setup()
         self._fill_devices()
-        self.router.set_mic(self.settings["mic"])
-        self._update_audio_status()
+        self._apply_routing()
+
+    def _set_status(self, text, error=False):
+        self.audio_status.setText(("⚠  " if error else "✔  ") + text)
+        colors = colors_for(self.settings["theme"])
+        if error:
+            self.audio_status.setStyleSheet(f"color: {DANGER};")
+        else:
+            self.audio_status.setStyleSheet(f"color: {colors['muted']};" if colors else "")
 
     def _update_audio_status(self):
+        if self._injecting():
+            missing = pwgraph.missing_tools()
+            if missing:
+                self._set_status(tr("{tools} not found – please install 'pipewire-utils'.",
+                                    tools=", ".join(missing)), True)
+            elif not self.settings["mic"]:
+                self._set_status(tr("No microphone selected – sounds are only played for you."), True)
+            else:
+                self._set_status(tr(
+                    "Sounds are injected into »{mic}« – every app recording from it (e.g. Discord) hears them.",
+                    mic=self.mic_combo.currentText(),
+                ))
+            return
         if self.router.ready and not self.router.error:
             mic_text = self.mic_combo.currentText() if self.settings["mic"] else tr("no microphone")
             self.audio_status.setText(
@@ -471,9 +520,7 @@ class MainWindow(QMainWindow):
     def _on_mic_selected(self, _index):
         mic = self.mic_combo.currentData() or ""
         self._set("mic", mic)
-        self.router.error = ""
-        self.router.set_mic(mic)
-        self._update_audio_status()
+        self._apply_routing()
 
     def _on_sink_selected(self, _index):
         self._set("monitor_sink", self.sink_combo.currentData() or DEFAULT_SINK)
@@ -532,11 +579,16 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(tr("ffmpeg/pacat are missing – cannot play sounds."), 5000)
             return
         targets = []
-        if self.router.ready and not only_self:
-            targets.append((MIX_SINK, self.settings["vol_others"] / 100))
+        vol_others = self.settings["vol_others"] / 100
+        if not only_self:
+            if self._injecting():
+                if self.settings["mic"] and not pwgraph.missing_tools():
+                    targets.append(("inject", self.settings["mic"], vol_others))
+            elif self.router.ready:
+                targets.append(("sink", MIX_SINK, vol_others))
         if self.settings["monitor_enabled"] or only_self:
             vol = self.settings["vol_self"] / 100 or (0.6 if only_self else 0)
-            targets.append((self.settings["monitor_sink"] or DEFAULT_SINK, vol))
+            targets.append(("sink", self.settings["monitor_sink"] or DEFAULT_SINK, vol))
         if not self.player.play(sound, targets, self.settings["overlap"]):
             self.statusBar().showMessage(tr("No active output (volumes at 0 or routing disabled)."), 5000)
             return

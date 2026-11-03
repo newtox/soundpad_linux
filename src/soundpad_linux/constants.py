@@ -12,3 +12,7 @@ AUDIO_EXT = frozenset({
     ".mp3", ".wav", ".ogg", ".oga", ".opus", ".flac", ".m4a", ".aac",
     ".wma", ".webm", ".mp4", ".aiff", ".aif", ".mka", ".ac3",
 })
+
+INJECT_NODE_PREFIX = "soundpad_linux_inject_"
+ROUTING_VIRTUAL = "virtual"
+ROUTING_INJECT = "inject"

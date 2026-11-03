@@ -14,7 +14,7 @@ A soundboard for Linux and an alternative to Soundpad. It plays sounds through a
 - Categories with custom colors and emoji icons. Drag sounds onto a category to move them
 - Import of Soundpad `.spl` files including categories and play counts. Windows paths (`C:\…`) are matched to files in a Linux folder by file name
 - Add sounds as files, whole folders or via drag and drop
-- Virtual microphone **Soundpad_Linux-Mic** = your microphone + sounds
+- Two audio modes: a virtual microphone **Soundpad_Linux-Mic** (your microphone + sounds), or injecting sounds straight into your existing microphone without creating a new device (experimental)
 - Separate volume for others and for yourself, optional self-monitoring on any output device
 - "Play only for me" to preview sounds
 - Command line control for global hotkeys (works on Wayland too)
@@ -27,6 +27,7 @@ A soundboard for Linux and an alternative to Soundpad. It plays sounds through a
 - Linux (Windows and macOS are not supported) with PipeWire (incl. `pipewire-pulse`) or PulseAudio
 - Python ≥ 3.10 with PySide6
 - `ffmpeg`/`ffprobe` and `pactl`/`pacat` (package `pulseaudio-utils`)
+- for inject mode: `pw-dump`, `pw-link`, `pw-cat` (package `pipewire-utils`, PipeWire only)
 
 ## Installation
 
@@ -71,7 +72,11 @@ Or install the `.whl` file from a release: `pipx install soundpad_linux-<version
 PYTHONPATH=src python3 -m soundpad_linux
 ```
 
-## How the audio routing works
+## Audio modes
+
+Choose the mode in the *Audio* section of the window.
+
+### Virtual microphone (default)
 
 On startup Soundpad_Linux creates three modules via `pactl`:
 
@@ -84,7 +89,20 @@ Sounds (volume "for me") ──> your headphones
 
 The modules are removed again when the app quits. Select **Soundpad_Linux-Mic** as the input device in Discord, TeamSpeak or your game, and others will hear you and your sounds.
 
-**EasyEffects:** Choose "Easy Effects Source" as the microphone. It is picked automatically on first start if EasyEffects is running. If you start EasyEffects after Soundpad_Linux, click **Reconnect**.
+### Inject into my microphone (experimental)
+
+No new device is created. You keep your usual microphone in Discord (e.g. "Easy Effects Source" or "Default"), and Soundpad_Linux sends each sound directly to every app that is currently recording from the microphone you selected – similar to how Soundpad works on Windows.
+
+Under the hood each sound is played with `pw-cat` without a target and then linked with `pw-link` to the input ports of those apps (found via `pw-dump`). This requires PipeWire. Apps that start recording while a sound is already playing only hear the next sound.
+
+### EasyEffects
+
+Choose "Easy Effects Source" as the microphone. It is picked automatically on first start if EasyEffects is running. If you start EasyEffects after Soundpad_Linux, click **Reconnect**.
+
+### Tips
+
+- Discord's own noise suppression (Krisp) can filter out sound effects. If sounds are cut off or very quiet for others, turn it off in Discord and use EasyEffects for noise reduction instead.
+- If nothing arrives, check the status line at the bottom of the window and click **Reconnect**.
 
 ## Importing a Soundpad list
 
@@ -159,6 +177,7 @@ src/soundpad_linux/
 ├── theme.py            dark/light theme
 ├── spl.py              Soundpad .spl parser and file matching
 ├── audio.py            virtual microphone via pactl (PipeWire/PulseAudio)
+├── pwgraph.py          inject mode: reading the PipeWire graph and linking ports
 ├── player.py           playback via ffmpeg + pacat
 ├── ipc.py              controlling a running instance (hotkey commands)
 ├── models.py           table model and filter

@@ -16,6 +16,7 @@ fi
 pkgs=()
 command -v ffmpeg >/dev/null && command -v ffprobe >/dev/null || pkgs+=(ffmpeg)
 command -v pactl  >/dev/null && command -v pacat   >/dev/null || pkgs+=(pulseaudio-utils)
+command -v pw-cat >/dev/null && command -v pw-link >/dev/null && command -v pw-dump >/dev/null || pkgs+=(pipewire-utils)
 python3 -c "import PySide6" 2>/dev/null || pkgs+=(python3-pyside6)
 
 if [ ${#pkgs[@]} -gt 0 ]; then
