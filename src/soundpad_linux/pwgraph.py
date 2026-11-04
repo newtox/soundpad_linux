@@ -50,12 +50,12 @@ def _node_ids(nodes, name):
     return {nid for nid, n in nodes.items() if _props(n).get("node.name") == name}
 
 
-def recorder_ports(objects, source_name, exclude_prefix=""):
+def _recorders(objects, source_name, exclude_prefix=""):
     nodes, ports, links = index(objects)
     sources = _node_ids(nodes, source_name)
-    if not sources:
-        return []
     found = {}
+    if not sources:
+        return found
     for link in links:
         if _int(link.get("output-node-id")) not in sources:
             continue
@@ -72,8 +72,20 @@ def recorder_ports(objects, source_name, exclude_prefix=""):
         port_id = _int(link.get("input-port-id"))
         port = ports.get(port_id)
         if port is not None:
-            found[port_id] = _props(port).get("audio.channel") or "MONO"
-    return sorted(found.items())
+            found[port_id] = (p, _props(port).get("audio.channel") or "MONO")
+    return found
+
+
+def recorder_ports(objects, source_name, exclude_prefix=""):
+    return sorted((pid, channel) for pid, (_p, channel) in _recorders(objects, source_name, exclude_prefix).items())
+
+
+def recorder_apps(objects, source_name, exclude_prefix=""):
+    names = {
+        p.get("application.name") or p.get("node.description") or p.get("node.name") or "?"
+        for p, _channel in _recorders(objects, source_name, exclude_prefix).values()
+    }
+    return sorted(names, key=str.lower)
 
 
 def output_ports(objects, node_name):

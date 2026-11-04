@@ -52,3 +52,7 @@ def test_plan_links_unknown_channels_round_robin():
 
 def test_plan_links_without_outputs():
     assert pwgraph.plan_links([], [(10, "FL")]) == []
+
+
+def test_recorder_apps(objects):
+    assert pwgraph.recorder_apps(objects, "easyeffects_source") == ["Discord", "obs"]

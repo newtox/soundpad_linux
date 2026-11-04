@@ -43,6 +43,7 @@ from ..constants import (
     AUDIO_EXT,
     DEFAULT_SINK,
     EASYEFFECTS_SOURCE,
+    INJECT_NODE_PREFIX,
     MIX_SINK,
     ROUTING_INJECT,
     ROUTING_VIRTUAL,
@@ -309,10 +310,13 @@ class MainWindow(QMainWindow):
         self.mic_combo.setMinimumWidth(300)
         self.mic_combo.activated.connect(self._on_mic_selected)
         g.addWidget(self.mic_combo, 1, 1)
-        refresh = QPushButton("🔄  " + tr("Reconnect"))
-        refresh.setToolTip(tr("Refresh the device list and reconnect the microphone (e.g. after starting EasyEffects)"))
-        refresh.clicked.connect(self._reconnect_audio)
-        g.addWidget(refresh, 1, 2)
+        self.refresh_button = QPushButton()
+        self._reset_refresh_button()
+        self.refresh_button.setToolTip(
+            tr("Refresh the device list and reconnect the microphone (e.g. after starting EasyEffects)")
+        )
+        self.refresh_button.clicked.connect(self._reconnect_audio)
+        g.addWidget(self.refresh_button, 1, 2)
 
         self.monitor_check = QCheckBox("🎧  " + tr("Hear sounds myself on:"))
         self.monitor_check.setChecked(bool(self.settings["monitor_enabled"]))
@@ -476,9 +480,46 @@ class MainWindow(QMainWindow):
         self.sink_combo.setCurrentIndex(max(self.sink_combo.findData(sink), 0))
         self.sink_combo.setEnabled(self.monitor_check.isChecked())
 
+    def _reset_refresh_button(self):
+        self.refresh_button.setText("🔄  " + tr("Reconnect"))
+        self.refresh_button.setStyleSheet("")
+
+    def _flash_refresh_button(self, ok):
+        color = "#2fb67c" if ok else DANGER
+        self.refresh_button.setText(("✔  " + tr("Connected")) if ok else ("⚠  " + tr("Failed")))
+        self.refresh_button.setStyleSheet(f"QPushButton {{ border-color: {color}; color: {color}; font-weight: 700; }}")
+        QTimer.singleShot(2500, self._reset_refresh_button)
+
     def _reconnect_audio(self):
-        self._fill_devices()
-        self._apply_routing()
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            self._fill_devices()
+            self._apply_routing()
+            ok, message = self._reconnect_summary()
+        finally:
+            QApplication.restoreOverrideCursor()
+        self._flash_refresh_button(ok)
+        self.statusBar().showMessage(("✔  " if ok else "⚠  ") + message, 8000)
+
+    def _reconnect_summary(self):
+        mic = self.settings["mic"]
+        mic_text = self.mic_combo.currentText()
+        if self._injecting():
+            missing = pwgraph.missing_tools()
+            if missing:
+                return False, tr("{tools} not found – please install 'pipewire-utils'.", tools=", ".join(missing))
+            if not mic:
+                return False, tr("No microphone selected – sounds are only played for you.")
+            apps = pwgraph.recorder_apps(pwgraph.dump(), mic, INJECT_NODE_PREFIX)
+            if not apps:
+                return True, tr("Reconnected – no app is recording from »{mic}« right now.", mic=mic_text)
+            return True, tr("Reconnected – recording from »{mic}«: {apps}", mic=mic_text, apps=", ".join(apps))
+        if not self.router.ready or self.router.error:
+            return False, self.router.error or tr("Audio routing is not active")
+        return True, tr(
+            "Reconnected – {inputs} input and {outputs} output devices found.",
+            inputs=self.mic_combo.count() - 1, outputs=self.sink_combo.count() - 1,
+        )
 
     def _set_status(self, text, error=False):
         self.audio_status.setText(("⚠  " if error else "✔  ") + text)
