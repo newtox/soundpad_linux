@@ -199,7 +199,9 @@ The new language shows up under *View → Language* automatically.
 
 ## License
 
-[MIT](LICENSE)
+This project is licensed under the **Creative Commons Attribution-NonCommercial-ShareAlike (CC BY-NC-SA)** License.
+
+- **License**: [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
 ## Contact
 

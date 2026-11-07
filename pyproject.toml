@@ -7,7 +7,7 @@ name = "soundpad_linux"
 dynamic = ["version"]
 description = "Soundboard für Linux mit virtuellem Mikrofon und Import von Soundpad-Listen (.spl)"
 readme = "README.md"
-license = "MIT"
+license = "CC-BY-NC-SA-4.0"
 authors = [{ name = "Justin", email = "justin.lys26@gmail.com" }]
 requires-python = ">=3.10"
 dependencies = ["PySide6-Essentials>=6.5"]
