@@ -3,6 +3,7 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -10,38 +11,68 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      PYTHON_VERSION: "3.13"
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v5
 
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.13"
+          python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Check that the tag matches the version
+      - name: Read version
         run: |
           VERSION=$(python -c "import re; print(re.search(r'__version__ = \"(.+)\"', open('src/soundpad_linux/__init__.py').read()).group(1))")
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Check that the tag matches the version
+        if: github.event_name == 'push'
+        run: |
           if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
             echo "Tag $GITHUB_REF_NAME does not match __version__ $VERSION"
             exit 1
           fi
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - name: Test
         run: |
-          pip install -e ".[dev]" build
+          pip install -e ".[dev]" python-appimage
           ruff check .
           pytest
 
-      - name: Build packages
+      - name: Download Python base image
         run: |
-          python -m build --wheel
+          mkdir -p build/base
+          gh release download "python$PYTHON_VERSION" --repo niess/python-appimage \
+            --pattern "python$PYTHON_VERSION.*-cp${PYTHON_VERSION/./}-cp${PYTHON_VERSION/./}-manylinux*_x86_64.AppImage" \
+            --dir build/base
+          BASE=$(ls build/base/*.AppImage | sort | head -n1)
+          echo "Using $BASE"
+          chmod +x "$BASE"
+          echo "BASE_IMAGE=$PWD/$BASE" >> "$GITHUB_ENV"
+
+      - name: Build AppImage
+        run: ./packaging/build-appimage.sh
+
+      - name: Smoke test AppImage
+        run: |
+          APPIMAGE_EXTRACT_AND_RUN=1 QT_QPA_PLATFORM=offscreen "dist/Soundpad_Linux-$VERSION-x86_64.AppImage" --version
+
+      - name: Build source archive
+        run: |
           NAME="soundpad_linux-$VERSION"
           git archive --format=tar.gz --prefix="$NAME/" -o "dist/$NAME.tar.gz" HEAD
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: soundpad_linux-${{ env.VERSION }}
+          path: dist/*
+
       - name: Create release
-        env:
-          GH_TOKEN: ${{ github.token }}
+        if: github.event_name == 'push'
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/* \
+          gh release create "$GITHUB_REF_NAME" \
+            "dist/Soundpad_Linux-$VERSION-x86_64.AppImage" \
+            "dist/soundpad_linux-$VERSION.tar.gz" \
             --title "Soundpad_Linux $VERSION" \
             --generate-notes

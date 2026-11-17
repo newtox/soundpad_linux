@@ -5,10 +5,11 @@ SRC="$(cd "$(dirname "$0")" && pwd)"
 APP_DIR="$HOME/.local/share/soundpad_linux"
 BIN="$HOME/.local/bin/soundpad_linux"
 DESKTOP="$HOME/.local/share/applications/soundpad_linux.desktop"
+ICON="$HOME/.local/share/icons/hicolor/256x256/apps/soundpad_linux.png"
 
 if [ "$1" = "--uninstall" ]; then
     pkill -f "python3 -m soundpad_linux" 2>/dev/null || true
-    rm -rf "$APP_DIR" "$BIN" "$DESKTOP"
+    rm -rf "$APP_DIR" "$BIN" "$DESKTOP" "$ICON"
     echo "Soundpad_Linux removed. Your settings are kept in ~/.config/soundpad_linux"
     exit 0
 fi
@@ -43,6 +44,7 @@ PYTHONPATH="$APP_DIR\${PYTHONPATH:+:\$PYTHONPATH}" exec python3 -m soundpad_linu
 EOF
 chmod 755 "$BIN"
 
+install -Dm644 "$SRC/data/soundpad_linux.png" "$ICON"
 sed "s|^Exec=.*|Exec=$BIN|" "$SRC/data/soundpad_linux.desktop" > "$DESKTOP"
 update-desktop-database "$(dirname "$DESKTOP")" 2>/dev/null || true
 

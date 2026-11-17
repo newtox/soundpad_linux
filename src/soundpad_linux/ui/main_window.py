@@ -33,7 +33,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .. import __version__, pwgraph
+from .. import __version__, desktop_entry, pwgraph
 from ..audio import AudioRouter
 from ..categories import Categories
 from ..config import load_config, save_config
@@ -62,6 +62,7 @@ from .widgets import (
     ALL,
     COLOR_ROLE,
     COUNT_ROLE,
+    ICON_PATH,
     ICON_ROLE,
     VALUE_ROLE,
     CategoryList,
@@ -79,6 +80,9 @@ def audio_filter():
 
 
 def cli_command():
+    appimage = os.environ.get("APPIMAGE")
+    if appimage:
+        return f'"{appimage}"' if " " in appimage else appimage
     if shutil.which(APP_ID):
         return APP_ID
     return f"{sys.executable} -m soundpad_linux"
@@ -124,6 +128,7 @@ class MainWindow(QMainWindow):
         self._init_audio()
         self._refresh_categories()
         self._probe_unknown()
+        QTimer.singleShot(800, self._offer_app_menu)
 
     def _action(self, text, slot, shortcut=None, menu=None):
         a = QAction(text, self)
@@ -145,6 +150,10 @@ class MainWindow(QMainWindow):
         m.addSeparator()
         self._action(tr("New category …"), self.new_category, "Ctrl+N", m)
         m.addSeparator()
+        if os.environ.get("APPIMAGE"):
+            self._action(tr("Add to application menu"), self.add_to_app_menu, None, m)
+            self._action(tr("Remove from application menu"), self.remove_from_app_menu, None, m)
+            m.addSeparator()
         self._action(tr("Quit"), self.quit_app, "Ctrl+Q", m)
 
         m = bar.addMenu(tr("&Playback"))
@@ -379,6 +388,32 @@ class MainWindow(QMainWindow):
         )
         if answer == QMessageBox.Yes:
             self.restart_app()
+
+    def add_to_app_menu(self):
+        try:
+            desktop_entry.install(os.environ["APPIMAGE"], ICON_PATH)
+        except (OSError, KeyError) as e:
+            QMessageBox.warning(self, APP_NAME, tr("Could not create the menu entry: {error}", error=e))
+            return
+        QMessageBox.information(
+            self, APP_NAME,
+            tr("{app} is now in your application menu. If you move the AppImage, add it again.", app=APP_NAME),
+        )
+
+    def remove_from_app_menu(self):
+        desktop_entry.remove()
+        self.statusBar().showMessage(tr("Menu entry removed."), 5000)
+
+    def _offer_app_menu(self):
+        appimage = os.environ.get("APPIMAGE")
+        if not appimage or self.settings.get("menu_entry_asked") or desktop_entry.is_installed(appimage):
+            return
+        self._set("menu_entry_asked", True)
+        answer = QMessageBox.question(
+            self, APP_NAME, tr("Add {app} to your application menu?", app=APP_NAME),
+        )
+        if answer == QMessageBox.Yes:
+            self.add_to_app_menu()
 
     def restart_app(self):
         self.quitting = True

@@ -35,7 +35,7 @@ version = { attr = "soundpad_linux.__version__" }
 where = ["src"]
 
 [tool.setuptools.package-data]
-soundpad_linux = ["locales/*.json"]
+soundpad_linux = ["locales/*.json", "resources/*.png"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>soundpad_linux</id>
+  <name>Soundpad_Linux</name>
+  <summary>Soundboard with a virtual microphone</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>CC-BY-NC-SA-4.0</project_license>
+  <description>
+    <p>
+      A soundboard for Linux and an alternative to Soundpad. Sounds are played through a virtual
+      microphone or injected into your existing microphone, so others in Discord, TeamSpeak or your
+      game hear them. Soundpad sound lists (.spl) can be imported directly.
+    </p>
+  </description>
+  <launchable type="desktop-id">soundpad_linux.desktop</launchable>
+  <url type="homepage">https://github.com/newtox/soundpad_linux</url>
+  <developer id="io.github.newtox">
+    <name>Justin</name>
+  </developer>
+  <content_rating type="oars-1.1"/>
+</component>

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QAbstractItemView, QApplication, QLabel, QListWidget, QSlider, QStyle, QTableView
@@ -11,8 +13,13 @@ ICON_ROLE = Qt.UserRole + 3
 ALL = "\x00all"
 
 
+ICON_PATH = Path(__file__).resolve().parent.parent / "resources" / "icon.png"
+
+
 def app_icon():
-    icon = QIcon.fromTheme("audio-volume-high")
+    if ICON_PATH.is_file():
+        return QIcon(str(ICON_PATH))
+    icon = QIcon.fromTheme("soundpad_linux")
     if icon.isNull():
         icon = QApplication.style().standardIcon(QStyle.SP_MediaVolume)
     return icon

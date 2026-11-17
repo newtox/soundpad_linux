@@ -25,13 +25,35 @@ A soundboard for Linux and an alternative to Soundpad. It plays sounds through a
 ## Requirements
 
 - Linux (Windows and macOS are not supported) with PipeWire (incl. `pipewire-pulse`) or PulseAudio
-- Python ≥ 3.10 with PySide6
 - `ffmpeg`/`ffprobe` and `pactl`/`pacat` (package `pulseaudio-utils`)
 - for inject mode: `pw-dump`, `pw-link`, `pw-cat` (package `pipewire-utils`, PipeWire only)
+- Python ≥ 3.10 with PySide6 – only when not using the AppImage
+
+These audio tools are part of most desktop installations. If something is missing, the app tells you on startup. On Fedora/Nobara:
+
+```bash
+sudo dnf install ffmpeg pulseaudio-utils pipewire-utils
+```
 
 ## Installation
 
-### Download (Fedora/Nobara)
+### AppImage (recommended)
+
+1. Download `Soundpad_Linux-<version>-x86_64.AppImage` from the [latest release](https://github.com/newtox/soundpad_linux/releases/latest)
+2. Make it executable and start it:
+
+```bash
+chmod +x Soundpad_Linux-*-x86_64.AppImage
+./Soundpad_Linux-*-x86_64.AppImage
+```
+
+Or right-click the file → *Properties → Permissions → Is executable*, then double-click it.
+
+On first start the app offers to add itself to your application menu (also available under *File → Add to application menu*). Python and Qt are bundled; only the audio tools listed under [Requirements](#requirements) come from your system.
+
+Tip: rename the file to `Soundpad_Linux.AppImage` and keep it in a fixed place such as `~/Applications`. Then the menu entry and your hotkeys keep working when you replace it with a newer version.
+
+### Install script (Fedora/Nobara)
 
 1. Download `soundpad_linux-<version>.tar.gz` from the [latest release](https://github.com/newtox/soundpad_linux/releases/latest)
 2. Extract it and run the installer:
@@ -61,10 +83,6 @@ On other distributions, install the packages listed under [Requirements](#requir
 ```bash
 pipx install git+https://github.com/newtox/soundpad_linux.git
 ```
-
-Or install the `.whl` file from a release: `pipx install soundpad_linux-<version>-py3-none-any.whl`
-
-`ffmpeg` and `pulseaudio-utils` still need to be installed through your package manager.
 
 ### Run without installing
 
@@ -130,7 +148,9 @@ soundpad_linux --random           # random sound
 soundpad_linux --stop             # stop everything
 ```
 
-Right-click a sound → *Copy hotkey command* puts the matching command on your clipboard.
+With the AppImage, use the path to the AppImage instead of `soundpad_linux`, e.g. `/home/you/Apps/Soundpad_Linux-0.3.0-x86_64.AppImage --play 12`.
+
+Right-click a sound → *Copy hotkey command* puts the matching command on your clipboard – including the right path when running as AppImage.
 
 Inside the window: **Enter/double-click** play, **Esc** stop, **F2** rename, **Del** remove, **Ctrl+F** search (Enter in the search box plays the first match), **Ctrl+R** random sound.
 
@@ -158,11 +178,22 @@ pytest
 2. Tag and push:
 
 ```bash
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.3.0
+git push origin v0.3.0
 ```
 
-GitHub Actions runs the tests, builds the release archive and the wheel, and publishes the release with generated notes.
+GitHub Actions runs the tests, builds the AppImage and the source archive, and publishes the release with generated notes.
+
+To try a build without releasing, start the *Release* workflow manually under *Actions → Release → Run workflow*. The AppImage is then attached to the workflow run as an artifact.
+
+### Building the AppImage locally
+
+```bash
+pip install python-appimage
+./packaging/build-appimage.sh
+```
+
+The result lands in `dist/`. The script bundles Python and PySide6, removes the Qt modules the app doesn't use and packs everything with `appimagetool`.
 
 ### Project structure
 
@@ -176,12 +207,14 @@ src/soundpad_linux/
 ├── locales/            translation files (de.json, …)
 ├── theme.py            dark/light theme
 ├── spl.py              Soundpad .spl parser and file matching
+├── desktop_entry.py    application menu entry for the AppImage
 ├── audio.py            virtual microphone via pactl (PipeWire/PulseAudio)
 ├── pwgraph.py          inject mode: reading the PipeWire graph and linking ports
 ├── player.py           playback via ffmpeg + pacat
 ├── ipc.py              controlling a running instance (hotkey commands)
 ├── models.py           table model and filter
 ├── util.py             helpers
+├── resources/          app icon
 └── ui/
     ├── main_window.py    main window
     ├── category_dialog.py  category editor

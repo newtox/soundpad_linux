@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Soundpad_Linux
+GenericName=Soundboard
+Comment=Soundboard with a virtual microphone
+Comment[de]=Soundboard mit virtuellem Mikrofon
+Exec=soundpad_linux
+Icon=soundpad_linux
+Terminal=false
+Categories=AudioVideo;Audio;
+Keywords=soundpad;soundboard;
+StartupWMClass=soundpad_linux
