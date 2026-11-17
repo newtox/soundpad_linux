@@ -56,6 +56,8 @@ jobs:
 
       - name: Smoke test AppImage
         run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libegl1 libgl1 libxkbcommon0 libfontconfig1 libdbus-1-3
           APPIMAGE_EXTRACT_AND_RUN=1 QT_QPA_PLATFORM=offscreen "dist/Soundpad_Linux-$VERSION-x86_64.AppImage" --version
 
       - name: Build source archive
